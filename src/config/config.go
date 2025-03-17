@@ -6,15 +6,19 @@ import (
 
 type Config struct {
   AppAddress string
+  AppProfile string
 }
 
 func setDefaults() {
   viper.SetConfigName("config")
   viper.SetConfigType("yaml")
   viper.AddConfigPath(".")
-  viper.AutomaticEnv()
 
-  viper.SetDefault("app.address", ":8000")
+  viper.SetDefault("address", ":8000")
+  viper.SetDefault("profile", "debug")
+
+  viper.AutomaticEnv()
+  viper.SetEnvPrefix("squad")
 }
 
 func Default() *Config {
@@ -22,9 +26,11 @@ func Default() *Config {
 
   viper.ReadInConfig()
 
-  appAddress := viper.GetString("app.address")
+  appAddress := viper.GetString("address")
+  appProfile := viper.GetString("profile")
 
   return &Config {
     AppAddress: appAddress,
- }
+    AppProfile: appProfile,
+  }
 }
