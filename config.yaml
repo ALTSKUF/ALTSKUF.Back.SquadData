@@ -1,2 +1,3 @@
-address: ":8000"
-profile: "debug"
+app:
+  address: ":8000"
+  profile: "debug"
