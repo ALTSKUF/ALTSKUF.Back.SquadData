@@ -4,6 +4,7 @@ import (
 	"log"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/db"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/rabbit"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/models"
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +19,15 @@ func main() {
 
   db.AutoMigrate(&models.Squad{})
   db.AutoMigrate(&models.SquadMember{})
+
+  rmq, err := rabbit.Setup(config)
+  if err != nil {
+    log.Fatal(err)
+  }
+  defer rmq.Close()
+
+  log.Printf(" [*] Start consuming")
+  go rmq.StartConsuming("user")
 
   gin.SetMode(config.AppProfile)
   router := gin.Default()

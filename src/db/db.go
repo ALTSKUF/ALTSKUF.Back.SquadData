@@ -13,7 +13,7 @@ type Db struct {
 }
 
 func InitDb(config *config.Config) (*Db, error) {
-  dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
+  dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
     config.DbHost,
     config.DbUser,
     config.DbPassword,

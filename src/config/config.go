@@ -12,8 +12,12 @@ type Config struct {
   DbUser string
   DbPassword string
   DbName string
-  DbPort int
+  DbPort string
   DbSSLMode string
+  RMQUser string
+  RMQPassword string
+  RMQHost string
+  RMQPort string
 }
 
 func setDefaults() {
@@ -24,11 +28,13 @@ func setDefaults() {
   viper.SetDefault("app.address", ":8000")
   viper.SetDefault("app.profile", "debug")
 
-  viper.SetDefault("db.port", 5432)
+  viper.SetDefault("db.port", "5432")
   viper.SetDefault("db.host", "db")
   viper.SetDefault("db.user", "postgres")
   viper.SetDefault("db.name", "postgres")
   viper.SetDefault("db.sslmode", "disable")
+
+  viper.SetDefault("rmq.port", "5672")
 
   viper.AutomaticEnv()
   viper.SetEnvPrefix("squad")
@@ -43,12 +49,17 @@ func Default() *Config {
   appAddress := viper.GetString("app.address")
   appProfile := viper.GetString("app.profile")
 
-  dbPort := viper.GetInt("db.port")
+  dbPort := viper.GetString("db.port")
   dbHost := viper.GetString("db.host")
   dbPassword := viper.GetString("db.password")
   dbName := viper.GetString("db.name")
   dbUser := viper.GetString("db.user")
   dbSSLMode := viper.GetString("db.sslmode")
+
+  rmqUser := viper.GetString("rmq.user")
+  rmqPassword := viper.GetString("rmq.password")
+  rmqHost := viper.GetString("rmq.host")
+  rmqPort := viper.GetString("rmq.port")
 
   return &Config {
     AppAddress: appAddress,
@@ -59,5 +70,9 @@ func Default() *Config {
     DbName: dbName,
     DbPort: dbPort,
     DbSSLMode: dbSSLMode,
+    RMQUser: rmqUser,
+    RMQPassword: rmqPassword,
+    RMQHost: rmqHost,
+    RMQPort: rmqPort,
   }
 }
