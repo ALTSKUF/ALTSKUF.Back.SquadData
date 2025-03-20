@@ -2,17 +2,21 @@ package main
 
 import (
 	"log"
+	"strconv"
+
+	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/db"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/rabbit"
+	m "github.com/ALTSKUF/ALTSKUF.Back.SquadData/middleware"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/models"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/rabbit"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
   config := config.Default()
 
-  db, err := db.InitDb(config)
+  db, err := db.Init(config)
   if err != nil {
     log.Fatal(err)
   }
@@ -26,16 +30,53 @@ func main() {
   }
   defer rmq.Close()
 
-  log.Printf(" [*] Start consuming")
-  go rmq.StartConsuming("user")
-
   gin.SetMode(config.AppProfile)
   router := gin.Default()
+  router.Use(m.ErrorCatchMiddleware())
 
-  router.GET("/", func(c *gin.Context) {
-    data := gin.H{"hello": "world"}
+  router.GET("/squads/:id", func(c *gin.Context) {
+    param := c.Param("id")
+    squad_id, err := strconv.Atoi(param)
+    if err != nil {
+      c.Error(e.InvalidURLParamError)
+        return
+    }
 
-    c.JSON(200, data)
+    squad_info, err := db.GetSquadInfo(squad_id)
+    if err != nil {
+      c.Error(err)
+      return
+    }
+    if squad_info == nil {
+      response := gin.H{
+        "info": "Squad doesn't exist",
+      }
+      c.JSON(404, response)
+      return
+    }
+
+    uuids, err := db.GetSquadMembers(squad_id)
+    if err != nil {
+      c.Error(err)
+      return
+    }
+
+    if len(uuids) == 0 {
+      response := gin.H{
+        "info": "Squad is empty",
+      }
+
+      c.JSON(200, response)
+      return
+    }
+
+    response, err := rmq.GetUsersRPC(uuids)
+    if err != nil {
+      c.Error(err)
+      return
+    }
+
+    c.JSON(200, response)
   })
 
   router.Run(config.AppAddress)

@@ -1,17 +1,20 @@
 package rabbit
 
 import (
-  "github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
-  e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
-  amqp "github.com/rabbitmq/amqp091-go"
-  "fmt"
+	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/dto"
+	u "github.com/ALTSKUF/ALTSKUF.Back.SquadData/utils"
+	"github.com/google/uuid"
+	amqp "github.com/rabbitmq/amqp091-go"
+	"encoding/json"
+	"fmt"
   "log"
 )
 
 type RMQ struct {
-  Connection *amqp.Connection
-  receiveChannel *amqp.Channel
-  sendChannel *amqp.Channel
+  connection *amqp.Connection
+  channel *amqp.Channel
 }
 
 func Setup(config *config.Config) (*RMQ, error) {
@@ -27,43 +30,16 @@ func Setup(config *config.Config) (*RMQ, error) {
     return nil, e.RMQConnectionOpenError
   }
 
-  rch, err := conn.Channel()
+  ch, err := conn.Channel()
   if err != nil {
     return nil, e.RMQChannelOpenError
   }
 
-  sch, err := conn.Channel()
-  if err != nil {
-    return nil, e.RMQChannelOpenError
-  }
-
-  return &RMQ{conn, rch, sch}, nil
-}
-
-func (rmq *RMQ) StartConsuming(name string) error { // call as goroutine
-  q, err := rmq.receiveChannel.QueueDeclare(
-    name,
-    false,
-    false,
-    true,
-    false,
-    nil,
-  )
-
-  msgs, err := rmq.consume(q.Name, "", true, true, false, false)
-  if err != nil {
-    return err
-  }
-
-  for msg := range msgs {
-    log.Printf("Received message: %s", msg.Body)
-  }
-
-  return nil
+  return &RMQ{conn, ch}, nil
 }
 
 func (rmq *RMQ) consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool) (<-chan amqp.Delivery, error) {
-  delivery, err := rmq.receiveChannel.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, nil) 
+  delivery, err := rmq.channel.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, nil) 
   if err != nil {
     return nil, e.RMQStartConsumingError
   }
@@ -71,8 +47,55 @@ func (rmq *RMQ) consume(queue, consumer string, autoAck, exclusive, noLocal, noW
   return delivery, nil
 }
 
+func (rmq *RMQ) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, error) {
+  q, err := rmq.channel.QueueDeclare(
+    "",
+    false,
+    false,
+    true,
+    false,
+    nil,
+  )
+  if err != nil {
+    return nil, e.RMQQueueDeclareError
+  }
+
+  corrId := u.RandomString(32)
+
+  body, _ := json.Marshal(uuids)
+  rmq.channel.Publish(
+    "",
+    q.Name,
+    true, 
+    false, 
+    amqp.Publishing{
+      ContentType: "application/json", 
+      CorrelationId: corrId,
+      ReplyTo: q.Name,
+      Body: body,
+    }, 
+  ) 
+
+  msgs, err := rmq.consume(q.Name, "", true, true, false, false)
+  if err != nil {
+    return nil, e.RMQStartConsumingError
+  }
+
+  var response dto.GetUserResponse
+  log.Println(" [*] Get user RPC")
+  for msg := range msgs {
+    if msg.CorrelationId != corrId {
+      continue
+    } 
+
+    json.Unmarshal(msg.Body, &response)
+    break
+  }
+  log.Println(" [*] End of user RPC")
+  return &response, nil
+}
+
 func (rmq *RMQ) Close() {
-  rmq.receiveChannel.Close()
-  rmq.sendChannel.Close()
-  rmq.Connection.Close()
+  rmq.channel.Close()
+  rmq.connection.Close()
 }
