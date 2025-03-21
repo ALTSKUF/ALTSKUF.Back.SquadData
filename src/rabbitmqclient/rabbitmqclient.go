@@ -1,4 +1,4 @@
-package rabbit
+package rabbitmqclient
 
 import (
 	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
@@ -12,12 +12,12 @@ import (
   "log"
 )
 
-type RMQ struct {
+type RMQClient struct {
   connection *amqp.Connection
   channel *amqp.Channel
 }
 
-func Setup(config *config.Config) (*RMQ, error) {
+func Setup(config *config.Config) (*RMQClient, error) {
   url := fmt.Sprintf("amqp://%s:%s@%s:%s/", 
     config.RMQUser, 
     config.RMQPassword, 
@@ -35,10 +35,10 @@ func Setup(config *config.Config) (*RMQ, error) {
     return nil, e.RMQChannelOpenError
   }
 
-  return &RMQ{conn, ch}, nil
+  return &RMQClient{conn, ch}, nil
 }
 
-func (rmq *RMQ) consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool) (<-chan amqp.Delivery, error) {
+func (rmq *RMQClient) consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool) (<-chan amqp.Delivery, error) {
   delivery, err := rmq.channel.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, nil) 
   if err != nil {
     return nil, e.RMQStartConsumingError
@@ -47,7 +47,7 @@ func (rmq *RMQ) consume(queue, consumer string, autoAck, exclusive, noLocal, noW
   return delivery, nil
 }
 
-func (rmq *RMQ) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, error) {
+func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, error) {
   q, err := rmq.channel.QueueDeclare(
     "",
     false,
@@ -95,7 +95,7 @@ func (rmq *RMQ) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, error) {
   return &response, nil
 }
 
-func (rmq *RMQ) Close() {
+func (rmq *RMQClient) Close() {
   rmq.channel.Close()
   rmq.connection.Close()
 }

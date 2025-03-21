@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
-	"strconv"
-
 	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/db"
 	m "github.com/ALTSKUF/ALTSKUF.Back.SquadData/middleware"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/models"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/rabbit"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/mqclient"
 	"github.com/gin-gonic/gin"
+
+	"log"
+	"strconv"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
   db.AutoMigrate(&models.Squad{})
   db.AutoMigrate(&models.SquadMember{})
 
-  rmq, err := rabbit.Setup(config)
+  rmq, err := mqclient.Setup(config)
   if err != nil {
     log.Fatal(err)
   }
