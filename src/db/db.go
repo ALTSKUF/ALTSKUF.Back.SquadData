@@ -35,6 +35,11 @@ func Init(config *config.Config) (*DbController, error) {
   return &DbController{db}, nil
 }
 
+func (db *DbController) Migrate() {
+  db.AutoMigrate(&models.Squad{})
+  db.AutoMigrate(&models.SquadMember{})
+}
+
 func (db *DbController) GetSquadInfo(squad_id int) (*dto.SquadInfo, error) {
   var squad_info dto.SquadInfo
   result := db.Model(&models.Squad{}).Where("id = ?", squad_id).First(&squad_info)
@@ -62,4 +67,19 @@ func (db *DbController) GetSquadMembers(squad_id int) ([]uuid.UUID, error) {
   }
 
   return uuids, nil
+}
+
+func (db *DbController) GetAllSquads() ([]dto.SquadInfo, error) {
+  var squads []dto.SquadInfo
+
+  result := db.Model(&models.Squad{}).Find(&squads)
+  if result.Error != nil {
+    if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+      return squads, nil
+    } else {
+      return nil, e.DbTransactionError
+    }
+  }
+
+  return squads, nil
 }
