@@ -1,5 +1,6 @@
 package dto 
 
-type GetUserResponse struct {
-  
+type GetUsersResponse struct {
+  Users *[]User `json:"users"`
+  Error error `json:"error,omitempty"`
 }

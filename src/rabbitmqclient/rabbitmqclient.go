@@ -12,6 +12,10 @@ import (
   "log"
 )
 
+type RabbitMQClient interface {
+  GetUsersRPC()
+}
+
 type RMQClient struct {
   connection *amqp.Connection
   channel *amqp.Channel
@@ -38,16 +42,11 @@ func Setup(config *config.Config) (*RMQClient, error) {
   return &RMQClient{conn, ch}, nil
 }
 
-func (rmq *RMQClient) consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool) (<-chan amqp.Delivery, error) {
-  delivery, err := rmq.channel.Consume(queue, consumer, autoAck, exclusive, noLocal, noWait, nil) 
-  if err != nil {
-    return nil, e.RMQStartConsumingError
-  }
+func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
+  if len(uuids) == 0 {
+    return dto.GetUsersResponse{}
+  } 
 
-  return delivery, nil
-}
-
-func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, error) {
   q, err := rmq.channel.QueueDeclare(
     "",
     false,
@@ -57,7 +56,10 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, erro
     nil,
   )
   if err != nil {
-    return nil, e.RMQQueueDeclareError
+    return dto.GetUsersResponse{
+      Users: nil,
+      Error: e.RMQQueueDeclareError,
+    }
   }
 
   corrId := u.RandomString(32)
@@ -76,12 +78,15 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, erro
     }, 
   ) 
 
-  msgs, err := rmq.consume(q.Name, "", true, true, false, false)
+  msgs, err := rmq.channel.Consume(q.Name, "", true, true, false, false, nil)
   if err != nil {
-    return nil, e.RMQStartConsumingError
+    return dto.GetUsersResponse{
+      Users: nil,
+      Error: e.RMQStartConsumingError,
+    } 
   }
 
-  var response dto.GetUserResponse
+  var response dto.GetUsersResponse
   log.Println(" [*] Get user RPC")
   for msg := range msgs {
     if msg.CorrelationId != corrId {
@@ -92,7 +97,7 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) (*dto.GetUserResponse, erro
     break
   }
   log.Println(" [*] End of user RPC")
-  return &response, nil
+  return response
 }
 
 func (rmq *RMQClient) Close() {

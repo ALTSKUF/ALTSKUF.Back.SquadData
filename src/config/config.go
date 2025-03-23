@@ -76,3 +76,20 @@ func Default() *Config {
     RMQPort: rmqPort,
   }
 }
+
+func TestConfig() *Config {
+  return &Config {
+    AppAddress: ":8000",
+    AppProfile: "test",
+    DbHost: "db",
+    DbUser: "postgres",
+    DbPassword: "mypassword",
+    DbName: "testdb",
+    DbPort: "5432",
+    DbSSLMode: "disable",
+    RMQUser: "guest",
+    RMQPassword: "guest",
+    RMQHost: "rabbitmq",
+    RMQPort: "5672",
+  }
+}

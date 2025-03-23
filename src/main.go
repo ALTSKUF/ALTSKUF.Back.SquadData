@@ -6,7 +6,7 @@ import (
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/db"
 	m "github.com/ALTSKUF/ALTSKUF.Back.SquadData/middleware"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/models"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/mqclient"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/rabbitmqclient"
 	"github.com/gin-gonic/gin"
 
 	"log"
@@ -24,7 +24,7 @@ func main() {
   db.AutoMigrate(&models.Squad{})
   db.AutoMigrate(&models.SquadMember{})
 
-  rmq, err := mqclient.Setup(config)
+  rmq, err := rabbitmqclient.Setup(config)
   if err != nil {
     log.Fatal(err)
   }
@@ -70,9 +70,9 @@ func main() {
       return
     }
 
-    response, err := rmq.GetUsersRPC(uuids)
-    if err != nil {
-      c.Error(err)
+    response := rmq.GetUsersRPC(uuids)
+    if response.Error != nil {
+      c.Error(response.Error)
       return
     }
 
