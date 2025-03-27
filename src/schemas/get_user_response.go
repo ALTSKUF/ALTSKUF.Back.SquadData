@@ -1,4 +1,4 @@
-package dto 
+package schemas
 
 type GetUsersResponse struct {
   Users *[]User `json:"users,omitempty"`

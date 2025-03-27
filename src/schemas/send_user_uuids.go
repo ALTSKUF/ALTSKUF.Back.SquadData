@@ -1,4 +1,4 @@
-package dto
+package schemas
 
 import (
   "github.com/google/uuid"

@@ -3,16 +3,17 @@ package main
 import (
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	m "github.com/ALTSKUF/ALTSKUF.Back.SquadData/middleware"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/app"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/api"
 	"github.com/gin-gonic/gin"
 
 	"log"
+  "net/http"
 )
 
 func main() {
   config := config.Default()
 
-  app, err := app.Init(config)
+  server, err := api.Init(config)
   if err != nil {
     log.Fatal(err)
   }
@@ -21,8 +22,12 @@ func main() {
   router := gin.Default()
   router.Use(m.ErrorCatchMiddleware())
 
-  squads := router.Group("/squads")
-  squads.GET("/", app.SquadsHandler)
+  api.RegisterHandlers(router, server)
 
-  router.Run(config.AppAddress)
+  s := http.Server{
+    Handler: router,
+    Addr: config.AppAddress,
+  }
+
+  log.Fatal(s.ListenAndServe())
 }

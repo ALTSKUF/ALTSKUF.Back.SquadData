@@ -1,4 +1,4 @@
-package dto
+package schemas
 
 type User struct {
   FullName string `json:"fullName"`

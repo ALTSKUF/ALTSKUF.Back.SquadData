@@ -2,7 +2,10 @@ package middleware
 
 import (
   e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
+  "github.com/ALTSKUF/ALTSKUF.Back.SquadData/schemas"
   "github.com/gin-gonic/gin"
+
+  "net/http"
 )
 
 func ErrorCatchMiddleware() gin.HandlerFunc {
@@ -11,11 +14,15 @@ func ErrorCatchMiddleware() gin.HandlerFunc {
 
     if len(c.Errors) > 0 {
       err := c.Errors.Last().Err
+      var error schemas.Error
+
       switch err{
       case e.InvalidURLParamError:
-        c.JSON(400, gin.H{"error": "Invalid url"})
+        error.Error = "Invalid url parameter"
+        c.JSON(http.StatusBadRequest, error)
       default:
-        c.JSON(500, gin.H{"error": "Internal server error"})
+        error.Error = "Internal server error"
+        c.JSON(http.StatusInternalServerError, error)
       }
     }
   }
