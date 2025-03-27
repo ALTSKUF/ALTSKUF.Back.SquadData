@@ -29,8 +29,10 @@ func Setup(config *config.Config) (*RMQClient, error) {
     config.RMQPort, 
   ) 
 
+  log.Printf("Connecting to RabbitMQ on %s", url)
   conn, err := amqp.Dial(url)
   if err != nil {
+    log.Printf("Error: %s", err)
     return nil, e.RMQConnectionOpenError
   }
 
@@ -51,7 +53,7 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
     "",
     false,
     false,
-    true,
+    false,
     false,
     nil,
   )
@@ -64,10 +66,12 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
 
   corrId := u.RandomString(32)
 
-  body, _ := json.Marshal(uuids)
+  sendUUIDS := dto.SendUUIDS{UUIDS: uuids}
+
+  body, _ := json.Marshal(sendUUIDS)
   rmq.channel.Publish(
     "",
-    q.Name,
+    "rpc_queue",
     true, 
     false, 
     amqp.Publishing{

@@ -35,6 +35,9 @@ func setDefaults() {
   viper.SetDefault("db.sslmode", "disable")
 
   viper.SetDefault("rmq.port", "5672")
+  viper.SetDefault("rmq.user", "user")
+  viper.SetDefault("rmq.password", "password")
+  viper.SetDefault("rmq.host", "localhost")
 
   viper.AutomaticEnv()
   viper.SetEnvPrefix("squad")
@@ -74,22 +77,5 @@ func Default() *Config {
     RMQPassword: rmqPassword,
     RMQHost: rmqHost,
     RMQPort: rmqPort,
-  }
-}
-
-func TestConfig() *Config {
-  return &Config {
-    AppAddress: ":8000",
-    AppProfile: "test",
-    DbHost: "db",
-    DbUser: "postgres",
-    DbPassword: "mypassword",
-    DbName: "testdb",
-    DbPort: "5432",
-    DbSSLMode: "disable",
-    RMQUser: "guest",
-    RMQPassword: "guest",
-    RMQHost: "rabbitmq",
-    RMQPort: "5672",
   }
 }
