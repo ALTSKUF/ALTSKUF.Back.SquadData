@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Test microservice with users database, in real integration tests should be replaced
+// Returns two users for non-empty list of uuids and empty response for empty list of uuids
 func RabbitMQServer() {
   config := config.Default()
 
@@ -66,13 +68,18 @@ func RabbitMQServer() {
       }
     } else {
       log.Printf(" [+] Got UUIDs: %s", sendUUIDS)
-      sendUsers := []dto.User {
-        {FullName: "John Doe", Group: "secret", Role: "manager"},
-        {FullName: "Doe John", Group: "non secret", Role: "director"},
-      }
 
-      response = dto.GetUsersResponse {
-        Users: &sendUsers,
+      if len(sendUUIDS.UUIDS) == 0 {
+        response = dto.GetUsersResponse {}
+      } else {
+        sendUsers := []dto.User {
+          {FullName: "John Doe", Group: "secret", Role: "manager"},
+          {FullName: "Doe John", Group: "non secret", Role: "director"},
+        }
+
+        response = dto.GetUsersResponse {
+          Users: &sendUsers,
+        }
       }
     }
 
@@ -100,6 +107,34 @@ func RabbitMQServer() {
   }
 }
 
+// Test GetUsersRPC with empty list of uuids
+// Response must be empty
+func TestGetUsersRPCEmpty(t *testing.T) {
+  u.LongTest(t)
+
+  config := config.Default()
+  client, err := Setup(config)
+  if err != nil {
+    log.Fatal(err)
+  }
+  defer client.Close()
+
+  // remove in future
+  go RabbitMQServer()
+
+  uuids := make([]uuid.UUID, 0)
+
+  log.Printf(" [*] Waiting for response")
+  response := client.GetUsersRPC(uuids)
+  log.Printf(" [*] Got users: %s", response.Users)
+
+  assert.Condition(t, func () bool { 
+    return response.Users == nil && response.Error == nil
+  })
+}
+
+// Test GetUsersRPC with non-empty list of uuids
+// Response must contain list of two users
 func TestGetUsersRPCNotEmpty(t *testing.T) {
   u.LongTest(t)
 
@@ -116,13 +151,20 @@ func TestGetUsersRPCNotEmpty(t *testing.T) {
     uuid.New(),
   }
 
+  // remove in future
   go RabbitMQServer()
 
   log.Printf("[*] Waiting for response")
+
   response := client.GetUsersRPC(uuids)
+
   log.Printf(" [*] Got users: %s", response.Users)
+
   if response.Error != nil {
     log.Printf(" [*] Error: %s", response.Error)
   }
-  assert.Condition(t, func () bool { return response.Users != nil && len(*response.Users) == 2 && response.Error == nil})
+
+  assert.Condition(t, func () bool { 
+    return response.Users != nil && len(*response.Users) == 2 && response.Error == nil
+  })
 }
