@@ -1,7 +1,6 @@
 package db
 
 import (
-  "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
   "github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
   "github.com/ALTSKUF/ALTSKUF.Back.SquadData/models"
   "github.com/ALTSKUF/ALTSKUF.Back.SquadData/schemas"
@@ -14,8 +13,8 @@ import (
 )
 
 type Db interface {
-  GetAllSquads() ([]schemas.SquadInfo, error)
-  GetSquadInfo(int) (*schemas.SquadInfo, error)
+  GetAllSquads() ([]schemas.GetSquadResponse, error)
+  GetSquadInfo(int) schemas.GetSquadResponse
   GetSquadMembers(int) ([]uuid.UUID, error)
   Migrate()
 }
@@ -36,7 +35,7 @@ func Init(config *config.Config) (Db, error) {
 
   db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
   if err != nil {
-    return nil, apperror.DbOpenError
+    return nil, e.DbOpenError
   }
 
   return &DbController{db}, nil
@@ -47,18 +46,22 @@ func (db *DbController) Migrate() {
   db.AutoMigrate(&models.SquadMember{})
 }
 
-func (db *DbController) GetSquadInfo(squad_id int) (*schemas.SquadInfo, error) {
-  var squad_info schemas.SquadInfo
+func (db *DbController) GetSquadInfo(squad_id int) schemas.GetSquadResponse  {
+  var squad_info schemas.GetSquadResponse
   result := db.Model(&models.Squad{}).Where("id = ?", squad_id).First(&squad_info)
   if result.Error != nil {
     if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-      return nil, nil
+			return schemas.GetSquadResponse{
+				Error: e.DbSquadNotFoundError,
+			}
     } else {
-      return nil, e.DbTransactionError
+			return schemas.GetSquadResponse{
+				Error: e.DbTransactionError,
+			}
     }
   }
 
-  return &squad_info, nil
+  return squad_info 
 }
 
 func (db *DbController) GetSquadMembers(squad_id int) ([]uuid.UUID, error) {
@@ -67,7 +70,7 @@ func (db *DbController) GetSquadMembers(squad_id int) ([]uuid.UUID, error) {
 
   if result.Error != nil {
     if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-      return uuids, nil
+      return nil, e.DbSquadNotFoundError
     } else {
       return nil, e.DbTransactionError
     }
@@ -76,8 +79,8 @@ func (db *DbController) GetSquadMembers(squad_id int) ([]uuid.UUID, error) {
   return uuids, nil
 }
 
-func (db *DbController) GetAllSquads() ([]schemas.SquadInfo, error) {
-  var squads []schemas.SquadInfo
+func (db *DbController) GetAllSquads() ([]schemas.GetSquadResponse, error) {
+  var squads []schemas.GetSquadResponse
 
   result := db.Model(&models.Squad{}).Find(&squads)
   if result.Error != nil {

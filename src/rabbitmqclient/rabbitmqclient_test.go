@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/dto"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/schemas"
 	u "github.com/ALTSKUF/ALTSKUF.Back.SquadData/utils"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -58,26 +58,26 @@ func RabbitMQServer() {
 
   log.Printf(" [+] Start processing")
   for rpc := range delivery {
-    var sendUUIDS dto.SendUUIDS      
-    var response dto.GetUsersResponse
+    var sendUUIDS schemas.SendUUIDS      
+    var response schemas.GetUsersResponse
 
     err := json.Unmarshal(rpc.Body, &sendUUIDS)
     if err != nil {
-      response = dto.GetUsersResponse{
+      response = schemas.GetUsersResponse{
         Error: errors.New("Invalid argument"),
       }
     } else {
       log.Printf(" [+] Got UUIDs: %s", sendUUIDS)
 
       if len(sendUUIDS.UUIDS) == 0 {
-        response = dto.GetUsersResponse {}
+        response = schemas.GetUsersResponse {}
       } else {
-        sendUsers := []dto.User {
+        sendUsers := []schemas.User {
           {FullName: "John Doe", Group: "secret", Role: "manager"},
           {FullName: "Doe John", Group: "non secret", Role: "director"},
         }
 
-        response = dto.GetUsersResponse {
+        response = schemas.GetUsersResponse {
           Users: &sendUsers,
         }
       }

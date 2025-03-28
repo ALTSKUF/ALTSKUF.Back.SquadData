@@ -3,7 +3,7 @@ package rabbitmqclient
 import (
 	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/dto"
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/schemas"
 	u "github.com/ALTSKUF/ALTSKUF.Back.SquadData/utils"
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -44,9 +44,9 @@ func Setup(config *config.Config) (*RMQClient, error) {
   return &RMQClient{conn, ch}, nil
 }
 
-func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
+func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) schemas.GetUsersResponse {
   if len(uuids) == 0 {
-    return dto.GetUsersResponse{}
+    return schemas.GetUsersResponse{}
   } 
 
   q, err := rmq.channel.QueueDeclare(
@@ -58,15 +58,14 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
     nil,
   )
   if err != nil {
-    return dto.GetUsersResponse{
-      Users: nil,
+    return schemas.GetUsersResponse{
       Error: e.RMQQueueDeclareError,
     }
   }
 
   corrId := u.RandomString(32)
 
-  sendUUIDS := dto.SendUUIDS{UUIDS: uuids}
+  sendUUIDS := schemas.SendUUIDS{UUIDS: uuids}
 
   body, _ := json.Marshal(sendUUIDS)
   rmq.channel.Publish(
@@ -84,20 +83,24 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) dto.GetUsersResponse {
 
   msgs, err := rmq.channel.Consume(q.Name, "", true, true, false, false, nil)
   if err != nil {
-    return dto.GetUsersResponse{
-      Users: nil,
+    return schemas.GetUsersResponse{
       Error: e.RMQStartConsumingError,
     } 
   }
 
-  var response dto.GetUsersResponse
+  var response schemas.GetUsersResponse
   log.Println(" [*] Get user RPC")
   for msg := range msgs {
     if msg.CorrelationId != corrId {
       continue
     } 
 
-    json.Unmarshal(msg.Body, &response)
+    err := json.Unmarshal(msg.Body, &response)
+    if err != nil {
+      return schemas.GetUsersResponse{
+        Error: e.RMQInvalidResponse,
+      } 
+    }
     break
   }
   log.Println(" [*] End of user RPC")
