@@ -4,6 +4,8 @@ import (
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/db"
   "github.com/gin-gonic/gin"
+
+	"net/http"
 )
 
 type Server struct {
@@ -28,5 +30,15 @@ func (s Server) GetSquads(c *gin.Context) {
     return
   }
 
-  c.JSON(200, squads)
+  c.JSON(http.StatusOK, squads)
+}
+
+func (s Server) GetSquadById(c *gin.Context, squad_id int) {
+	response := s.Db.GetSquadById(squad_id)
+	if response.Error != nil {
+		c.Error(response.Error)
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

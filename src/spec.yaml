@@ -24,6 +24,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /squads/{squad_id}:
+    get:
+      summary: Get squad info by its id 
+      operationId: getSquadById
+      parameters:
+        - in: path 
+          name: squad_id
+          schema:
+            type: integer
+          required: true
 components:
   schemas:
     SquadInfo:

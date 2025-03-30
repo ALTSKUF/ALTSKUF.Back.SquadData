@@ -14,7 +14,7 @@ import (
 
 type Db interface {
   GetAllSquads() ([]schemas.GetSquadResponse, error)
-  GetSquadInfo(int) schemas.GetSquadResponse
+  GetSquadById(int) schemas.GetSquadResponse
   GetSquadMembers(int) ([]uuid.UUID, error)
   Migrate()
 }
@@ -46,7 +46,7 @@ func (db *DbController) Migrate() {
   db.AutoMigrate(&models.SquadMember{})
 }
 
-func (db *DbController) GetSquadInfo(squad_id int) schemas.GetSquadResponse  {
+func (db *DbController) GetSquadById(squad_id int) schemas.GetSquadResponse  {
   var squad_info schemas.GetSquadResponse
   result := db.Model(&models.Squad{}).Where("id = ?", squad_id).First(&squad_info)
   if result.Error != nil {
