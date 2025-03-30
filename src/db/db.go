@@ -47,8 +47,8 @@ func (db *DbController) Migrate() {
 }
 
 func (db *DbController) GetSquadById(squad_id int) schemas.GetSquadResponse  {
-  var squad_info schemas.GetSquadResponse
-  result := db.Model(&models.Squad{}).Where("id = ?", squad_id).First(&squad_info)
+  var response schemas.GetSquadResponse
+  result := db.Model(&models.Squad{}).Where("id = ?", squad_id).First(&response)
   if result.Error != nil {
     if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return schemas.GetSquadResponse{
@@ -61,7 +61,7 @@ func (db *DbController) GetSquadById(squad_id int) schemas.GetSquadResponse  {
     }
   }
 
-  return squad_info 
+  return response 
 }
 
 func (db *DbController) GetSquadMembers(squad_id int) ([]uuid.UUID, error) {

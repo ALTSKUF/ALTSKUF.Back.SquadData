@@ -15,15 +15,21 @@ func ErrorCatchMiddleware() gin.HandlerFunc {
     if len(c.Errors) > 0 {
       err := c.Errors.Last().Err
       var error schemas.Error
+			var statusCode int
 
       switch err{
       case e.InvalidURLParamError:
         error.Error = "Invalid url parameter"
-        c.JSON(http.StatusBadRequest, error)
+				statusCode = http.StatusBadRequest
+			case e.DbSquadNotFoundError:
+				error.Error = "Squad not found"
+				statusCode = http.StatusNotFound
       default:
         error.Error = "Internal server error"
-        c.JSON(http.StatusInternalServerError, error)
+				statusCode = http.StatusInternalServerError
       }
-    }
+
+			c.JSON(statusCode, error)
+		}
   }
 }

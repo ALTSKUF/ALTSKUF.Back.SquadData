@@ -13,7 +13,6 @@ const (
   RMQInvalidResponse
 
   InvalidURLParamError
-  SquadNotFoundError
 )
 
 func (err AppError) Error() string {
@@ -37,8 +36,6 @@ func (err AppError) Error() string {
     str = "RabbitMQ: invalid response"
   case InvalidURLParamError:
     str = "Invalid URL"
-  case SquadNotFoundError:
-    str = "Squad not found"
   }
 
   return str

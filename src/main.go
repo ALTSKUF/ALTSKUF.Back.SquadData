@@ -1,13 +1,14 @@
 package main
 
 import (
+	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/api"
 	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/config"
 	m "github.com/ALTSKUF/ALTSKUF.Back.SquadData/middleware"
-	"github.com/ALTSKUF/ALTSKUF.Back.SquadData/api"
+	e "github.com/ALTSKUF/ALTSKUF.Back.SquadData/apperror"
 	"github.com/gin-gonic/gin"
 
 	"log"
-  "net/http"
+	"net/http"
 )
 
 func main() {
@@ -22,7 +23,11 @@ func main() {
   router := gin.Default()
   router.Use(m.ErrorCatchMiddleware())
 
-  api.RegisterHandlers(router, server)
+  api.RegisterHandlersWithOptions(router, server, api.GinServerOptions{
+		ErrorHandler: func(c *gin.Context, err error, statusCode int) {
+			c.Error(e.InvalidURLParamError) // For now, only error that can happen is error when parsing squad_id parameter in /squads/{squad_id} route
+		},
+	})
 
   s := http.Server{
     Handler: router,
