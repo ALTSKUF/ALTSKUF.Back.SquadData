@@ -13,15 +13,15 @@ import (
 )
 
 type RabbitMQClient interface {
-  GetUsersRPC()
+  GetUsersRPC([]uuid.UUID) schemas.GetUsersResponse
 }
 
-type RMQClient struct {
+type Client struct {
   connection *amqp.Connection
   channel *amqp.Channel
 }
 
-func Setup(config *config.Config) (*RMQClient, error) {
+func Setup(config *config.Config) (*Client, error) {
   url := fmt.Sprintf("amqp://%s:%s@%s:%s/", 
     config.RMQUser, 
     config.RMQPassword, 
@@ -41,10 +41,10 @@ func Setup(config *config.Config) (*RMQClient, error) {
     return nil, e.RMQChannelOpenError
   }
 
-  return &RMQClient{conn, ch}, nil
+  return &Client{conn, ch}, nil
 }
 
-func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) schemas.GetUsersResponse {
+func (rmq *Client) GetUsersRPC(uuids []uuid.UUID) schemas.GetUsersResponse {
   if len(uuids) == 0 {
     return schemas.GetUsersResponse{}
   } 
@@ -107,7 +107,7 @@ func (rmq *RMQClient) GetUsersRPC(uuids []uuid.UUID) schemas.GetUsersResponse {
   return response
 }
 
-func (rmq *RMQClient) Close() {
+func (rmq *Client) Close() {
   rmq.channel.Close()
   rmq.connection.Close()
 }

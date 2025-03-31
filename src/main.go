@@ -25,7 +25,7 @@ func main() {
 
   api.RegisterHandlersWithOptions(router, server, api.GinServerOptions{
 		ErrorHandler: func(c *gin.Context, err error, statusCode int) {
-			c.Error(e.InvalidURLParamError) // For now, only error that can happen is error when parsing squad_id parameter in /squads/{squad_id} route
+			c.Error(e.InvalidURLParamError) // For now, the only parsing error that can happen is error when squad_id is invalid
 		},
 	})
 

@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Squad data API
+  description: API for getting information about squads and its members
+  version: 1.0.0
+paths:
+  /squads:
+    get:
+      summary: Get all squads 
+      description: Returns a list of all squads
+      operationId: getSquads
+      responses:
+        "200":
+          description: A list of squads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquadInfo"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /squads/{squad_id}:
+    get:
+      summary: Get squad info by its id 
+      operationId: getSquadById
+      parameters:
+        - in: path 
+          name: squad_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Info about squad
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/SquadInfo"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Squad not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /squads/{squad_id}/members:
+    get:
+      summary: Get all squad members by squad id
+      operationId: getSquadMembersById
+      parameters:
+        - in: path
+          name: squad_id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: A list of squads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Users"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Squad not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    SquadInfo:
+      type: object
+      properties:
+        name: 
+          type: string
+        description: 
+          type: string
+      required:
+        - name
+    Users:
+      type: array 
+      items:
+        $ref: "#/components/schemas/User"
+    User:
+      type: object 
+      properties:
+        full_name: 
+          type: string
+        group: 
+          type: string
+        role: 
+          type: string
+      required:
+        - full_name
+        - group
+        - role
+    Error:
+      type: object 
+      properties:
+        error:
+          type: string
+      required:
+        - error

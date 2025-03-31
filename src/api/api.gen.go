@@ -19,6 +19,9 @@ type ServerInterface interface {
 	// Get squad info by its id
 	// (GET /squads/{squad_id})
 	GetSquadById(c *gin.Context, squadId int)
+	// Get all squad members by squad id
+	// (GET /squads/{squad_id}/members)
+	GetSquadMembersById(c *gin.Context, squadId int)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -67,6 +70,30 @@ func (siw *ServerInterfaceWrapper) GetSquadById(c *gin.Context) {
 	siw.Handler.GetSquadById(c, squadId)
 }
 
+// GetSquadMembersById operation middleware
+func (siw *ServerInterfaceWrapper) GetSquadMembersById(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "squad_id" -------------
+	var squadId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "squad_id", c.Param("squad_id"), &squadId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter squad_id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetSquadMembersById(c, squadId)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -96,4 +123,5 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 
 	router.GET(options.BaseURL+"/squads", wrapper.GetSquads)
 	router.GET(options.BaseURL+"/squads/:squad_id", wrapper.GetSquadById)
+	router.GET(options.BaseURL+"/squads/:squad_id/members", wrapper.GetSquadMembersById)
 }
