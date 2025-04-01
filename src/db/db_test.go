@@ -38,7 +38,7 @@ var (
 func TestGetSquadInfoSquadExists(t *testing.T) {
   u.LongTest(t)
 
-  response := db.GetSquadInfo(1)
+  response := db.GetSquadById(1)
   
   assert.Condition(t, func () bool {
     return response.Name == "Test 1" && response.Description == "" && response.Error == nil
@@ -48,7 +48,7 @@ func TestGetSquadInfoSquadExists(t *testing.T) {
 func TestGetSquadInfoSquadNotExists(t *testing.T) {
 	u.LongTest(t)
 
-	response := db.GetSquadInfo(10)
+	response := db.GetSquadById(10)
 
 	assert.Condition(t, func () bool {
 		return response.Name == "" && response.Description == "" &&  response.Error == e.DbSquadNotFoundError

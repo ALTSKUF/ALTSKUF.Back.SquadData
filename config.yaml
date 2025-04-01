@@ -1,6 +1,12 @@
 app:
   address: ":8000"
   profile: "debug"
+db:
+  host: db
+  user: postgres
+  password: mypassword
+  name: postgres
+  port: 5432
 rmq:
   host: "rabbitmq"
   user: "user"
